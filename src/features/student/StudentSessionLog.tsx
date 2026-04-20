@@ -56,21 +56,6 @@ export default function StudentSessionLog() {
 }
 
 function SlotCard({ slot, onChanged }: { slot: SlotRow; onChanged: () => void }) {
-  const nextIndex = (slot.set_logs.at(-1)?.set_index ?? 0) + 1
-
-  async function addSet() {
-    const hint = slot.last_logs.find((l) => l.set_index === nextIndex)
-    const { error } = await supabase.from('set_logs').insert({
-      slot_id: slot.id,
-      set_index: nextIndex,
-      reps: hint?.reps ?? 0,
-      weight: hint?.weight ?? 0,
-      rpe: hint?.rpe ?? null,
-    })
-    if (error) alert(error.message)
-    else onChanged()
-  }
-
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
       <div className="flex items-start justify-between">
@@ -86,24 +71,21 @@ function SlotCard({ slot, onChanged }: { slot: SlotRow; onChanged: () => void })
         </p>
       )}
 
-      <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 items-center text-xs text-slate-500">
-        <div>Set</div>
-        <div>Weight</div>
-        <div>Reps</div>
-        <div>RPE</div>
-        <div />
-      </div>
-
-      {slot.set_logs.map((log) => (
-        <SetRow key={log.id} log={log} hint={slot.last_logs.find((l) => l.set_index === log.set_index)} onChanged={onChanged} />
-      ))}
-
-      <button
-        onClick={addSet}
-        className="w-full text-sm py-2 rounded-lg border border-dashed border-slate-300 text-slate-600 active:bg-slate-50"
-      >
-        + Add set {nextIndex}
-      </button>
+      {slot.set_logs.length ? (
+        <>
+          <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-2 items-center text-xs text-slate-500">
+            <div>Set</div>
+            <div>Weight</div>
+            <div>Reps</div>
+            <div>RPE</div>
+          </div>
+          {slot.set_logs.map((log) => (
+            <SetRow key={log.id} log={log} hint={slot.last_logs.find((l) => l.set_index === log.set_index)} onChanged={onChanged} />
+          ))}
+        </>
+      ) : (
+        <p className="text-xs text-slate-500 italic">No sets prescribed yet.</p>
+      )}
     </div>
   )
 }
@@ -134,24 +116,17 @@ function SetRow({
     else onChanged()
   }
 
-  async function remove() {
-    const { error } = await supabase.from('set_logs').delete().eq('id', log.id)
-    if (error) alert(error.message)
-    else onChanged()
-  }
-
   const hintLabel = hint ? `${hint.weight}×${hint.reps}${hint.rpe ? ` @${hint.rpe}` : ''}` : null
 
   return (
-    <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 items-center">
+    <div className="grid grid-cols-[auto_1fr_1fr_1fr] gap-2 items-center">
       <div className="text-sm font-medium w-6">{log.set_index}</div>
-      <NumField value={weight} onChange={setWeight} onBlur={save} step={0.5} placeholder={hint ? String(hint.weight) : 'kg'} />
-      <NumField value={reps} onChange={setReps} onBlur={save} step={1} placeholder={hint ? String(hint.reps) : 'reps'} />
+      <NumField value={weight} onChange={setWeight} onBlur={save} step={0.5} placeholder="kg" />
+      <NumField value={reps} onChange={setReps} onBlur={save} step={1} placeholder="reps" />
       <NumField value={rpe ?? ''} onChange={(v) => setRpe(v === '' ? null : Number(v))} onBlur={save} step={0.5} placeholder="RPE" />
-      <button onClick={remove} className="text-slate-400 text-sm px-2" aria-label="Remove set">×</button>
-      {saving && <div className="col-span-5 text-xs text-slate-400">Saving…</div>}
+      {saving && <div className="col-span-4 text-xs text-slate-400">Saving…</div>}
       {hintLabel && (
-        <div className="col-span-5 text-xs text-slate-400 -mt-1">Last: {hintLabel}</div>
+        <div className="col-span-4 text-xs text-slate-400 -mt-1">Last time: {hintLabel}</div>
       )}
     </div>
   )

@@ -2,11 +2,21 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 
+interface SetLog {
+  id: string
+  slot_id: string
+  set_index: number
+  reps: number
+  weight: number
+  rpe: number | null
+}
+
 interface Slot {
   id: string
   order_index: number
   coach_notes: string | null
   exercise: { id: string; name: string; type: string }
+  set_logs: SetLog[]
 }
 
 interface Session {
@@ -39,11 +49,13 @@ export default function CoachSessionEditor() {
         id, name, day_index,
         exercise_slots (
           id, order_index, coach_notes,
-          exercise:exercises ( id, name, type )
+          exercise:exercises ( id, name, type ),
+          set_logs ( id, slot_id, set_index, reps, weight, rpe )
         )
       `)
       .eq('id', sessionId)
       .order('order_index', { referencedTable: 'exercise_slots' })
+      .order('set_index', { referencedTable: 'exercise_slots.set_logs' })
       .maybeSingle()
     if (data) {
       setSession({
@@ -170,8 +182,22 @@ function SlotEditor({ slot, onChanged }: { slot: Slot; onChanged: () => void }) 
     onChanged()
   }
 
+  async function addSet() {
+    const nextIndex = (slot.set_logs.at(-1)?.set_index ?? 0) + 1
+    const last = slot.set_logs.at(-1)
+    const { error } = await supabase.from('set_logs').insert({
+      slot_id: slot.id,
+      set_index: nextIndex,
+      reps: last?.reps ?? 5,
+      weight: last?.weight ?? 0,
+      rpe: last?.rpe ?? null,
+    })
+    if (error) alert(error.message)
+    else onChanged()
+  }
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-2">
+    <div className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
       <div className="flex items-start justify-between">
         <div>
           <div className="font-medium">{slot.exercise.name}</div>
@@ -179,14 +205,79 @@ function SlotEditor({ slot, onChanged }: { slot: Slot; onChanged: () => void }) 
         </div>
         <button onClick={remove} className="text-slate-400 text-sm">×</button>
       </div>
+
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         onBlur={saveNotes}
-        placeholder="Prescription / notes (e.g. 3×5 @ 80kg)"
+        placeholder="Notes (tempo, cues, etc.)"
         rows={2}
         className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-sm"
       />
+
+      {slot.set_logs.length > 0 && (
+        <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 items-center text-xs text-slate-500">
+          <div>Set</div>
+          <div>Weight</div>
+          <div>Reps</div>
+          <div>RPE</div>
+          <div />
+        </div>
+      )}
+
+      {slot.set_logs.map((s) => (
+        <CoachSetRow key={s.id} set={s} onChanged={onChanged} />
+      ))}
+
+      <button
+        onClick={addSet}
+        className="w-full text-sm py-2 rounded-lg border border-dashed border-slate-300 text-slate-600"
+      >
+        + Add set {(slot.set_logs.at(-1)?.set_index ?? 0) + 1}
+      </button>
+    </div>
+  )
+}
+
+function CoachSetRow({ set, onChanged }: { set: SetLog; onChanged: () => void }) {
+  const [weight, setWeight] = useState<number | ''>(set.weight)
+  const [reps, setReps] = useState<number | ''>(set.reps)
+  const [rpe, setRpe] = useState<number | ''>(set.rpe ?? '')
+
+  async function save() {
+    const payload = {
+      weight: weight === '' ? 0 : Number(weight),
+      reps: reps === '' ? 0 : Number(reps),
+      rpe: rpe === '' ? null : Number(rpe),
+    }
+    if (payload.weight === set.weight && payload.reps === set.reps && payload.rpe === set.rpe) return
+    const { error } = await supabase.from('set_logs').update(payload).eq('id', set.id)
+    if (error) alert(error.message)
+    else onChanged()
+  }
+
+  async function remove() {
+    const { error } = await supabase.from('set_logs').delete().eq('id', set.id)
+    if (error) alert(error.message)
+    else onChanged()
+  }
+
+  return (
+    <div className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-2 items-center">
+      <div className="text-sm font-medium w-6">{set.set_index}</div>
+      <input type="number" inputMode="decimal" step={0.5} value={weight}
+        onChange={(e) => setWeight(e.target.value === '' ? '' : Number(e.target.value))}
+        onBlur={save}
+        className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-center" />
+      <input type="number" inputMode="numeric" step={1} value={reps}
+        onChange={(e) => setReps(e.target.value === '' ? '' : Number(e.target.value))}
+        onBlur={save}
+        className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-center" />
+      <input type="number" inputMode="decimal" step={0.5} value={rpe} placeholder="—"
+        onChange={(e) => setRpe(e.target.value === '' ? '' : Number(e.target.value))}
+        onBlur={save}
+        className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-center" />
+      <button onClick={remove} className="text-slate-400 text-sm px-2">×</button>
     </div>
   )
 }
