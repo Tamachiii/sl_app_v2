@@ -58,8 +58,9 @@ supabase/schema.sql    Tables, RLS, helper functions
 
 - `vite.config.ts` reads `VITE_BASE` at build time. The workflow sets it to `/<repo-name>/`.
 - Deep links: `public/404.html` redirects → `index.html` restores the path (spa-github-pages trick). Don't remove either half.
-- Workflow secrets required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`.
-- Pages URL must be added to Supabase → Auth → URL Configuration for magic links to work.
+- Workflow secrets required: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`. Workflow writes them to `.env.production` before build so Vite inlines them (setting them as plain shell env vars doesn't work — Vite reads `.env*` files).
+- **Local `.env` must use LF line endings**, not CRLF — otherwise `source`/`gh secret set` picks up values with a trailing `\r`.
+- Auth is **email + password** (not magic link). Sign-up writes `full_name` into `raw_user_meta_data`; the `handle_new_user` trigger reads it into `profiles`.
 
 ## Commands
 
@@ -69,14 +70,35 @@ npm run build    # typecheck + production build
 npm run preview  # preview the built bundle
 ```
 
-## What to build next (priority)
+## Progress
 
-1. **Student set logger** — list assigned sessions, log sets per slot, show last-session weights, confirm session. Highest-value surface.
-2. **Coach student view** — per-student program navigator (weeks → sessions).
-3. **Coach session editor** — add/edit slots, reps, weights, notes, duplicate week.
-4. **Exercise library** — searchable list, client-side filter by `type`.
-5. **Review sessions** (coach) — recent confirmed sessions across students.
-6. **Stats** (student), **Goals**, **Dashboard** (coach overview).
+### Shipped
+- Vite + React + TS + Tailwind v4 scaffold; role-aware router in `App.tsx`.
+- Supabase schema with RLS policies for both roles (`supabase/schema.sql`).
+- Email + password auth (`src/routes/SignIn.tsx`) with sign-up that captures `full_name`.
+- GitHub Pages deploy workflow with `.env.production` generation; SPA 404 redirect.
+- **Student side**
+  - Home with next-session card and pending/completed counts (`features/student/StudentHome.tsx`).
+  - Sessions list grouped by week with confirmed/pending badges (`StudentSessions.tsx`).
+  - Session logger: per-slot set rows with weight/reps/RPE inputs, last-session hints, add/remove sets, confirm session (`StudentSessionLog.tsx`, `useSessionDetail.ts`).
+- **Coach side**
+  - Dashboard with student/session stats (`features/coach/CoachDashboard.tsx`).
+  - Students list with pending counts (`CoachStudents.tsx`).
+  - Student view: goals CRUD, programs tree (weeks → sessions), create program/week/session, duplicate week (`CoachStudentView.tsx`).
+  - Session editor: rename, add/remove exercise slots, coach notes per slot, delete session (`CoachSessionEditor.tsx`).
+  - Exercise library: search, type filter, add/delete (`CoachExercises.tsx`).
+  - Reviews: recent confirmed sessions across students (`CoachReviews.tsx`).
+
+### Upcoming
+1. **Student Stats** — volume/1RM trends per exercise, sessions/week, PR tracker.
+2. **Student Goals** — read-only view of goals set by the coach (currently a placeholder).
+3. **Session prescription structure** — today slots only have free-text `coach_notes`. Consider adding `target_sets`, `target_reps`, `target_weight` on `exercise_slots` for a structured "3×5 @ 80kg" layout in both editor and logger.
+4. **Coach review depth** — click into a confirmed session to see the student's set logs side-by-side with the prescription; add a `coach_feedback` text field.
+5. **Offline-first logging** — students log at the gym with flaky signal. Queue `set_logs` writes locally (IndexedDB) and sync on reconnect.
+6. **Coach self-assignment of students** — today linking coach↔student requires an SQL update. Add an invite code or a "claim student" flow.
+7. **Form-check video upload** — Supabase Storage bucket, student uploads a clip on a slot, coach leaves a threaded comment.
+8. **PWA manifest + icons** — for real "Add to Home Screen" on iOS.
+9. **Push notifications** (iOS 16.4+) — session assigned, feedback posted.
 
 ## Things to avoid
 
