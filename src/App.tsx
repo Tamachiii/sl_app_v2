@@ -4,19 +4,16 @@ import { useAuth } from './lib/session'
 import SignIn from './routes/SignIn'
 import CoachLayout from './routes/CoachLayout'
 import StudentLayout from './routes/StudentLayout'
-import {
-  CoachDashboard,
-  CoachStudents,
-  CoachStudentView,
-  CoachSessionEditor,
-  CoachReviews,
-  CoachExercises,
-  StudentStats,
-  StudentGoals,
-} from './routes/pages'
+import { StudentStats, StudentGoals } from './routes/pages'
 import StudentHome from './features/student/StudentHome'
 import StudentSessions from './features/student/StudentSessions'
 import StudentSessionLog from './features/student/StudentSessionLog'
+import CoachDashboard from './features/coach/CoachDashboard'
+import CoachStudents from './features/coach/CoachStudents'
+import CoachStudentView from './features/coach/CoachStudentView'
+import CoachSessionEditor from './features/coach/CoachSessionEditor'
+import CoachReviews from './features/coach/CoachReviews'
+import CoachExercises from './features/coach/CoachExercises'
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 

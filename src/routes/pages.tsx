@@ -7,12 +7,5 @@ function Placeholder({ title }: { title: string }) {
   )
 }
 
-export const CoachDashboard = () => <Placeholder title="Dashboard" />
-export const CoachStudents = () => <Placeholder title="Students" />
-export const CoachStudentView = () => <Placeholder title="Student" />
-export const CoachSessionEditor = () => <Placeholder title="Session editor" />
-export const CoachReviews = () => <Placeholder title="Review sessions" />
-export const CoachExercises = () => <Placeholder title="Exercise library" />
-
 export const StudentStats = () => <Placeholder title="Stats" />
 export const StudentGoals = () => <Placeholder title="Goals" />
