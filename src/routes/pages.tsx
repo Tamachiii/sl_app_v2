@@ -14,8 +14,5 @@ export const CoachSessionEditor = () => <Placeholder title="Session editor" />
 export const CoachReviews = () => <Placeholder title="Review sessions" />
 export const CoachExercises = () => <Placeholder title="Exercise library" />
 
-export const StudentHome = () => <Placeholder title="Today" />
-export const StudentSessions = () => <Placeholder title="Sessions" />
-export const StudentSessionLog = () => <Placeholder title="Log session" />
 export const StudentStats = () => <Placeholder title="Stats" />
 export const StudentGoals = () => <Placeholder title="Goals" />

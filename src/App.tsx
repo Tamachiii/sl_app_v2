@@ -11,12 +11,12 @@ import {
   CoachSessionEditor,
   CoachReviews,
   CoachExercises,
-  StudentHome,
-  StudentSessions,
-  StudentSessionLog,
   StudentStats,
   StudentGoals,
 } from './routes/pages'
+import StudentHome from './features/student/StudentHome'
+import StudentSessions from './features/student/StudentSessions'
+import StudentSessionLog from './features/student/StudentSessionLog'
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || '/'
 
